@@ -641,6 +641,23 @@ class XHeaderTest(HandlerBaseTestCase):
         )
 
 
+class XHeaderTrustedDownstreamNonListContainerTest(XHeaderTest):
+
+    def get_httpserver_options(self):
+        return dict(xheaders=True, trusted_downstream=set(["5.5.5.5"]))
+
+
+class XHeaderTrustedDownstreamCustomContainerTest(XHeaderTest):
+
+    def get_httpserver_options(self):
+
+        class CustomContainer:
+            def __contains__(self, item):
+                return item == "5.5.5.5"
+
+        return dict(xheaders=True, trusted_downstream=CustomContainer())
+
+
 class SSLXHeaderTest(AsyncHTTPSTestCase, HandlerBaseTestCase):
     def get_app(self):
         return Application([("/", XHeaderTest.Handler)])

@@ -37,7 +37,7 @@ from tornado.tcpserver import TCPServer
 from tornado.util import Configurable
 
 import typing
-from typing import Union, Any, Dict, Callable, List, Type, Tuple, Optional, Awaitable
+from typing import Union, Any, Dict, Callable, List, Type, Tuple, Optional, Awaitable, Container
 
 if typing.TYPE_CHECKING:
     from typing import Set  # noqa: F401
@@ -66,10 +66,11 @@ class HTTPServer(TCPServer, Configurable, httputil.HTTPServerConnectionDelegate)
 
     By default, when parsing the ``X-Forwarded-For`` header, Tornado will
     select the last (i.e., the closest) address on the list of hosts as the
-    remote host IP address.  To select the next server in the chain, a list of
-    trusted downstream hosts may be passed as the ``trusted_downstream``
-    argument.  These hosts will be skipped when parsing the ``X-Forwarded-For``
-    header.
+    remote host IP address.  To select the next server in the chain, a
+    container (i.e., an object responding to ``__contains__``, such as ``list``,
+    ``set``, or a custom class instance) of trusted downstream hosts may be
+    passed as the ``trusted_downstream`` argument.  These hosts will be skipped
+    when parsing the ``X-Forwarded-For`` header.
 
     To make this server serve SSL traffic, send the ``ssl_options`` keyword
     argument with an `ssl.SSLContext` object. For compatibility with older
@@ -166,7 +167,7 @@ class HTTPServer(TCPServer, Configurable, httputil.HTTPServerConnectionDelegate)
         body_timeout: float = None,
         max_body_size: int = None,
         max_buffer_size: int = None,
-        trusted_downstream: List[str] = None,
+        trusted_downstream: Container[str] = None,
     ) -> None:
         self.request_callback = request_callback
         self.xheaders = xheaders
@@ -272,7 +273,7 @@ class _HTTPRequestContext(object):
         stream: iostream.IOStream,
         address: Tuple,
         protocol: Optional[str],
-        trusted_downstream: List[str] = None,
+        trusted_downstream: Container[str] = None,
     ) -> None:
         self.address = address
         # Save the socket's address family now so we know how to
@@ -299,7 +300,7 @@ class _HTTPRequestContext(object):
             self.protocol = "http"
         self._orig_remote_ip = self.remote_ip
         self._orig_protocol = self.protocol
-        self.trusted_downstream = set(trusted_downstream or [])
+        self.trusted_downstream = trusted_downstream or set()
 
     def __str__(self) -> str:
         if self.address_family in (socket.AF_INET, socket.AF_INET6):
